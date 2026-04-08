@@ -1,0 +1,277 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>Calendario Económico — Ecuador</title>
+<script src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
+<script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
+<script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+    background: #f5f5f0; color: #1a1a1a; min-height: 100vh; }
+  a { color: inherit; }
+  input, select, button { font-family: inherit; }
+  :root {
+    --bg: #ffffff; --bg2: #f5f5f0; --bg3: #ebebeb;
+    --text: #1a1a1a; --text2: #555; --text3: #999;
+    --border: rgba(0,0,0,0.1); --border2: rgba(0,0,0,0.2);
+    --radius: 8px; --radius-lg: 12px;
+  }
+  @media (prefers-color-scheme: dark) {
+    body { background: #1a1a1a; color: #f0f0f0; }
+    :root {
+      --bg: #242424; --bg2: #1a1a1a; --bg3: #2e2e2e;
+      --text: #f0f0f0; --text2: #aaa; --text3: #666;
+      --border: rgba(255,255,255,0.1); --border2: rgba(255,255,255,0.2);
+    }
+  }
+</style>
+</head>
+<body>
+<div id="root"></div>
+<script type="text/babel">
+const { useState, useEffect } = React;
+
+const EVENTS_RAW = [
+  { ind:"Crecimiento del PIB", cur:"AUD", flag:"🇦🇺", country:"Australia",     date:"2026-06-03", gmtH:1,  gmtM:30 },
+  { ind:"Crecimiento del PIB", cur:"CAD", flag:"🇨🇦", country:"Canadá",        date:"2026-04-30", gmtH:12, gmtM:30, url:"https://tradingeconomics.com/canada/monthly-gdp-mom" },
+  { ind:"Crecimiento del PIB", cur:"CHF", flag:"🇨🇭", country:"Suiza",         date:"2026-05-18", gmtH:6,  gmtM:0  },
+  { ind:"Crecimiento del PIB", cur:"EUR", flag:"🇪🇺", country:"Europa",        date:"2026-04-30", gmtH:9,  gmtM:0  },
+  { ind:"Crecimiento del PIB", cur:"GBP", flag:"🇬🇧", country:"Reino Unido",   date:"2026-04-16", gmtH:6,  gmtM:0  },
+  { ind:"Crecimiento del PIB", cur:"JPY", flag:"🇯🇵", country:"Japón",         date:"2026-05-14", gmtH:23, gmtM:50 },
+  { ind:"Crecimiento del PIB", cur:"NZD", flag:"🇳🇿", country:"Nueva Zelanda", date:"2026-06-17", gmtH:22, gmtM:45 },
+  { ind:"Crecimiento del PIB", cur:"USD", flag:"🇺🇸", country:"EE.UU.",        date:"2026-04-09", gmtH:12, gmtM:30 },
+  { ind:"Crecimiento del PIB", cur:"DE",  flag:"🇩🇪", country:"Alemania",      date:"2026-04-30", gmtH:6,  gmtM:0  },
+  { ind:"Crecimiento del PIB", cur:"CN",  flag:"🇨🇳", country:"China",         date:"2026-04-16", gmtH:2,  gmtM:0  },
+  { ind:"PMI Manufacturero", cur:"AUD", flag:"🇦🇺", country:"Australia",     date:"2026-04-23", gmtH:23, gmtM:0  },
+  { ind:"PMI Manufacturero", cur:"CAD", flag:"🇨🇦", country:"Canadá",        date:"2026-05-01", gmtH:13, gmtM:30 },
+  { ind:"PMI Manufacturero", cur:"CHF", flag:"🇨🇭", country:"Suiza",         date:"2026-05-04", gmtH:7,  gmtM:30 },
+  { ind:"PMI Manufacturero", cur:"EUR", flag:"🇪🇺", country:"Europa",        date:"2026-04-23", gmtH:8,  gmtM:0  },
+  { ind:"PMI Manufacturero", cur:"GBP", flag:"🇬🇧", country:"Reino Unido",   date:"2026-04-23", gmtH:8,  gmtM:30 },
+  { ind:"PMI Manufacturero", cur:"JPY", flag:"🇯🇵", country:"Japón",         date:"2026-04-23", gmtH:0,  gmtM:30 },
+  { ind:"PMI Manufacturero", cur:"NZD", flag:"🇳🇿", country:"Nueva Zelanda", date:"2026-04-10", gmtH:21, gmtM:30 },
+  { ind:"PMI Manufacturero", cur:"USD", flag:"🇺🇸", country:"EE.UU.",        date:"2026-04-23", gmtH:13, gmtM:45 },
+  { ind:"PMI Manufacturero", cur:"DE",  flag:"🇩🇪", country:"Alemania",      date:"2026-04-23", gmtH:7,  gmtM:55 },
+  { ind:"PMI Manufacturero", cur:"CN",  flag:"🇨🇳", country:"China",         date:"2026-04-30", gmtH:1,  gmtM:45 },
+  { ind:"PMI de Servicios", cur:"AUD", flag:"🇦🇺", country:"Australia",     date:"2026-04-23", gmtH:23, gmtM:0  },
+  { ind:"PMI de Servicios", cur:"CAD", flag:"🇨🇦", country:"Canadá",        date:"2026-05-05", gmtH:13, gmtM:30 },
+  { ind:"PMI de Servicios", cur:"CHF", flag:"🇨🇭", country:"Suiza",         date:"2026-05-04", gmtH:7,  gmtM:30 },
+  { ind:"PMI de Servicios", cur:"EUR", flag:"🇪🇺", country:"Europa",        date:"2026-04-23", gmtH:8,  gmtM:0  },
+  { ind:"PMI de Servicios", cur:"GBP", flag:"🇬🇧", country:"Reino Unido",   date:"2026-04-23", gmtH:8,  gmtM:30 },
+  { ind:"PMI de Servicios", cur:"JPY", flag:"🇯🇵", country:"Japón",         date:"2026-04-23", gmtH:0,  gmtM:30 },
+  { ind:"PMI de Servicios", cur:"NZD", flag:"🇳🇿", country:"Nueva Zelanda", date:"2026-04-13", gmtH:21, gmtM:30 },
+  { ind:"PMI de Servicios", cur:"USD", flag:"🇺🇸", country:"EE.UU.",        date:"2026-04-23", gmtH:13, gmtM:45 },
+  { ind:"PMI de Servicios", cur:"DE",  flag:"🇩🇪", country:"Alemania",      date:"2026-04-23", gmtH:7,  gmtM:55 },
+  { ind:"PMI de Servicios", cur:"CN",  flag:"🇨🇳", country:"China",         date:"2026-04-30", gmtH:1,  gmtM:45 },
+  { ind:"Ventas Minoristas", cur:"CAD", flag:"🇨🇦", country:"Canadá",        date:"2026-04-24", gmtH:12, gmtM:30 },
+  { ind:"Ventas Minoristas", cur:"CHF", flag:"🇨🇭", country:"Suiza",         date:"2026-05-01", gmtH:6,  gmtM:30 },
+  { ind:"Ventas Minoristas", cur:"EUR", flag:"🇪🇺", country:"Europa",        date:"2026-04-08", gmtH:9,  gmtM:0  },
+  { ind:"Ventas Minoristas", cur:"GBP", flag:"🇬🇧", country:"Reino Unido",   date:"2026-04-24", gmtH:6,  gmtM:0  },
+  { ind:"Ventas Minoristas", cur:"JPY", flag:"🇯🇵", country:"Japón",         date:"2026-04-29", gmtH:23, gmtM:50 },
+  { ind:"Ventas Minoristas", cur:"NZD", flag:"🇳🇿", country:"Nueva Zelanda", date:"2026-05-21", gmtH:22, gmtM:45 },
+  { ind:"Ventas Minoristas", cur:"USD", flag:"🇺🇸", country:"EE.UU.",        date:"2026-04-16", gmtH:12, gmtM:30 },
+  { ind:"Ventas Minoristas", cur:"DE",  flag:"🇩🇪", country:"Alemania",      date:"2026-04-30", gmtH:6,  gmtM:0  },
+  { ind:"Ventas Minoristas", cur:"CN",  flag:"🇨🇳", country:"China",         date:"2026-04-15", gmtH:2,  gmtM:0  },
+  { ind:"Inflación (CPI)", cur:"AUD", flag:"🇦🇺", country:"Australia",     date:"2026-04-29", gmtH:1,  gmtM:30 },
+  { ind:"Inflación (CPI)", cur:"CAD", flag:"🇨🇦", country:"Canadá",        date:"2026-04-20", gmtH:12, gmtM:30 },
+  { ind:"Inflación (CPI)", cur:"CHF", flag:"🇨🇭", country:"Suiza",         date:"2026-05-05", gmtH:6,  gmtM:30 },
+  { ind:"Inflación (CPI)", cur:"EUR", flag:"🇪🇺", country:"Europa",        date:"2026-04-16", gmtH:9,  gmtM:0  },
+  { ind:"Inflación (CPI)", cur:"GBP", flag:"🇬🇧", country:"Reino Unido",   date:"2026-04-22", gmtH:6,  gmtM:0  },
+  { ind:"Inflación (CPI)", cur:"JPY", flag:"🇯🇵", country:"Japón",         date:"2026-04-17", gmtH:23, gmtM:30 },
+  { ind:"Inflación (CPI)", cur:"NZD", flag:"🇳🇿", country:"Nueva Zelanda", date:"2026-04-20", gmtH:22, gmtM:45 },
+  { ind:"Inflación (CPI)", cur:"USD", flag:"🇺🇸", country:"EE.UU.",        date:"2026-04-10", gmtH:12, gmtM:30 },
+  { ind:"Inflación (CPI)", cur:"DE",  flag:"🇩🇪", country:"Alemania",      date:"2026-04-10", gmtH:6,  gmtM:0  },
+  { ind:"Inflación (CPI)", cur:"CN",  flag:"🇨🇳", country:"China",         date:"2026-04-10", gmtH:1,  gmtM:30 },
+  { ind:"Tasa de Desempleo", cur:"AUD", flag:"🇦🇺", country:"Australia",     date:"2026-04-16", gmtH:1,  gmtM:30 },
+  { ind:"Tasa de Desempleo", cur:"CAD", flag:"🇨🇦", country:"Canadá",        date:"2026-04-10", gmtH:12, gmtM:30 },
+  { ind:"Tasa de Desempleo", cur:"CHF", flag:"🇨🇭", country:"Suiza",         date:"2026-04-08", gmtH:5,  gmtM:45 },
+  { ind:"Tasa de Desempleo", cur:"EUR", flag:"🇪🇺", country:"Europa",        date:"2026-04-30", gmtH:9,  gmtM:0  },
+  { ind:"Tasa de Desempleo", cur:"GBP", flag:"🇬🇧", country:"Reino Unido",   date:"2026-04-15", gmtH:6,  gmtM:0  },
+  { ind:"Tasa de Desempleo", cur:"JPY", flag:"🇯🇵", country:"Japón",         date:"2026-05-01", gmtH:23, gmtM:30 },
+  { ind:"Tasa de Desempleo", cur:"NZD", flag:"🇳🇿", country:"Nueva Zelanda", date:"2026-05-05", gmtH:22, gmtM:45 },
+  { ind:"Tasa de Desempleo", cur:"USD", flag:"🇺🇸", country:"EE.UU.",        date:"2026-04-30", gmtH:12, gmtM:30 },
+  { ind:"Tasa de Desempleo", cur:"DE",  flag:"🇩🇪", country:"Alemania",      date:"2026-04-30", gmtH:7,  gmtM:55 },
+  { ind:"Tasa de Desempleo", cur:"CN",  flag:"🇨🇳", country:"China",         date:"2026-04-16", gmtH:2,  gmtM:0  },
+  { ind:"Tasa de Interés", cur:"AUD", flag:"🇦🇺", country:"Australia",     date:"2026-05-05", gmtH:3,  gmtM:30 },
+  { ind:"Tasa de Interés", cur:"CAD", flag:"🇨🇦", country:"Canadá",        date:"2026-04-20", gmtH:13, gmtM:45 },
+  { ind:"Tasa de Interés", cur:"CHF", flag:"🇨🇭", country:"Suiza",         date:"2026-06-18", gmtH:7,  gmtM:30 },
+  { ind:"Tasa de Interés", cur:"EUR", flag:"🇪🇺", country:"Europa",        date:"2026-04-30", gmtH:12, gmtM:15 },
+  { ind:"Tasa de Interés", cur:"GBP", flag:"🇬🇧", country:"Reino Unido",   date:"2026-04-30", gmtH:11, gmtM:0  },
+  { ind:"Tasa de Interés", cur:"JPY", flag:"🇯🇵", country:"Japón",         date:"2026-04-28", gmtH:3,  gmtM:0  },
+  { ind:"Tasa de Interés", cur:"NZD", flag:"🇳🇿", country:"Nueva Zelanda", date:"2026-04-08", gmtH:1,  gmtM:0  },
+  { ind:"Tasa de Interés", cur:"USD", flag:"🇺🇸", country:"EE.UU.",        date:"2026-04-29", gmtH:18, gmtM:0  },
+  { ind:"Tasa de Interés", cur:"DE",  flag:"🇩🇪", country:"Alemania",      date:"2026-04-30", gmtH:12, gmtM:15 },
+  { ind:"Tasa de Interés", cur:"CN",  flag:"🇨🇳", country:"China",         date:"2026-04-20", gmtH:1,  gmtM:15 },
+  { ind:"Inflación Mom",    cur:"USD", flag:"🇺🇸", country:"EE.UU.",        date:"2026-04-10", gmtH:12, gmtM:30 },
+  { ind:"Cambio Empleo",    cur:"AUD", flag:"🇦🇺", country:"Australia",     date:"2026-04-16", gmtH:1,  gmtM:30 },
+  { ind:"Cambio Empleo",    cur:"CAD", flag:"🇨🇦", country:"Canadá",        date:"2026-04-10", gmtH:12, gmtM:30 },
+  { ind:"Cambio Empleo",    cur:"EUR", flag:"🇪🇺", country:"Europa",        date:"2026-05-13", gmtH:9,  gmtM:0  },
+  { ind:"Cambio Empleo",    cur:"GBP", flag:"🇬🇧", country:"Reino Unido",   date:"2026-04-15", gmtH:6,  gmtM:0  },
+  { ind:"Cambio Empleo",    cur:"NZD", flag:"🇳🇿", country:"Nueva Zelanda", date:"2026-05-05", gmtH:22, gmtM:45 },
+  { ind:"Cambio Empleo",    cur:"USD", flag:"🇺🇸", country:"EE.UU.",        date:"2026-05-08", gmtH:12, gmtM:30 },
+];
+
+const DAYS_ES = ["Dom","Lun","Mar","Mié","Jue","Vie","Sáb"];
+const MONTHS_ES = ["Ene","Feb","Mar","Abr","May","Jun","Jul","Ago","Sep","Oct","Nov","Dic"];
+
+function gmtToEC(h, m) {
+  let eh = h - 5; if (eh < 0) eh += 24;
+  return `${String(eh).padStart(2,"0")}:${String(m).padStart(2,"0")}`;
+}
+function parseDate(s) { const [y,mo,d]=s.split("-").map(Number); return new Date(y,mo-1,d); }
+function formatDate(s) {
+  const d=parseDate(s);
+  return `${DAYS_ES[d.getDay()]} ${d.getDate()} ${MONTHS_ES[d.getMonth()]}`;
+}
+
+const IND_COLORS = {
+  "Tasa de Interés":"#7F77DD","Cambio Empleo":"#D85A30",
+  "Inflación (CPI)":"#BA7517","Inflación Mom":"#BA7517",
+  "Tasa de Desempleo":"#D4537E","PMI Manufacturero":"#378ADD",
+  "PMI de Servicios":"#1D9E75","Ventas Minoristas":"#0F6E56",
+  "Crecimiento del PIB":"#533AB7",
+};
+
+function App() {
+  const [now, setNow] = useState(new Date());
+  const [showAll, setShowAll] = useState(false);
+
+  useEffect(() => { const t = setInterval(()=>setNow(new Date()),1000); return ()=>clearInterval(t); },[]);
+
+  // Ecuador time
+  const utcH=now.getUTCHours(), utcM=now.getUTCMinutes(), utcS=now.getUTCSeconds();
+  let ecH=utcH-5; if(ecH<0)ecH+=24;
+  const ecStr=`${String(ecH).padStart(2,"0")}:${String(utcM).padStart(2,"0")}:${String(utcS).padStart(2,"0")}`;
+
+  // Today in Ecuador
+  const nowEC = new Date(now.getTime() - 5*3600000);
+  const TODAY = new Date(nowEC.getUTCFullYear(), nowEC.getUTCMonth(), nowEC.getUTCDate());
+
+  const dow = TODAY.getDay()===0?6:TODAY.getDay()-1;
+  const WS = new Date(TODAY); WS.setDate(TODAY.getDate()-dow);
+  const WE = new Date(WS); WE.setDate(WS.getDate()+6);
+
+  const EVENTS = EVENTS_RAW.map((r,i) => {
+    const d=parseDate(r.date);
+    const ecTime=gmtToEC(r.gmtH,r.gmtM);
+    const diff=Math.round((d-TODAY)/86400000);
+    return {...r,id:i,d,ecTime,diff,inWeek:d>=WS&&d<=WE,
+      dayLabel:diff===0?"HOY":diff===1?"MAÑANA":diff===-1?"AYER":"",
+      formattedDate:formatDate(r.date),
+      url:r.url||`https://tradingeconomics.com`};
+  }).sort((a,b)=>a.d-b.d||a.ecTime.localeCompare(b.ecTime));
+
+  const display = showAll ? EVENTS.filter(e=>e.diff>=0) : EVENTS.filter(e=>e.inWeek);
+  const grouped = {};
+  display.forEach(e=>{ if(!grouped[e.date])grouped[e.date]=[]; grouped[e.date].push(e); });
+  const sortedDates = Object.keys(grouped).sort();
+
+  const todayEvts = EVENTS.filter(e=>e.diff===0).sort((a,b)=>a.ecTime.localeCompare(b.ecTime));
+  const todayName = `${DAYS_ES[TODAY.getDay()].toUpperCase()} ${TODAY.getDate()} ${MONTHS_ES[TODAY.getMonth()].toUpperCase()}`;
+
+  return (
+    <div style={{maxWidth:680,margin:"0 auto",padding:"1rem 0.75rem"}}>
+
+      {/* Header */}
+      <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",
+        marginBottom:14,flexWrap:"wrap",gap:8}}>
+        <div>
+          <div style={{fontSize:18,fontWeight:600,color:"var(--text)"}}>Calendario Económico</div>
+          <div style={{fontSize:11,color:"var(--text3)"}}>
+            Semana {WS.getDate()}–{WE.getDate()} {MONTHS_ES[WE.getMonth()]} · Ecuador UTC-5
+          </div>
+        </div>
+        <div style={{fontFamily:"monospace",fontSize:20,fontWeight:600,
+          background:"var(--bg)",padding:"6px 14px",borderRadius:10,
+          border:"1px solid var(--border)",color:"var(--text)"}}>{ecStr}</div>
+      </div>
+
+      {/* HOY banner */}
+      {todayEvts.length>0&&(
+        <div style={{background:"rgba(216,90,48,0.07)",border:"1px solid rgba(216,90,48,0.3)",
+          borderRadius:10,padding:"8px 12px",marginBottom:10}}>
+          <div style={{fontSize:10,fontWeight:700,color:"#D85A30",marginBottom:6,letterSpacing:1}}>
+            HOY — {todayName}
+          </div>
+          <div style={{display:"flex",flexWrap:"wrap",gap:5}}>
+            {todayEvts.map(e=>(
+              <a key={e.id} href={e.url} target="_blank" rel="noopener noreferrer"
+                style={{textDecoration:"none",display:"flex",alignItems:"center",gap:4,
+                  background:"var(--bg)",borderRadius:6,
+                  border:`1px solid ${IND_COLORS[e.ind]||"#888"}44`,padding:"4px 8px"}}>
+                <span style={{fontSize:13}}>{e.flag}</span>
+                <span style={{fontSize:11,fontWeight:600,color:"var(--text)"}}>{e.cur}</span>
+                <span style={{fontSize:11,color:"var(--text2)"}}>{e.ind}</span>
+                <span style={{fontSize:11,fontFamily:"monospace",fontWeight:700,color:"#D85A30"}}>{e.ecTime}</span>
+              </a>
+            ))}
+          </div>
+        </div>
+      )}
+
+      {/* Toggle */}
+      <div style={{display:"flex",justifyContent:"flex-end",marginBottom:10,gap:6}}>
+        {[["Esta semana",false],["Todos (próximos)",true]].map(([label,val])=>(
+          <button key={label} onClick={()=>setShowAll(val)}
+            style={{fontSize:11,padding:"4px 10px",border:"1px solid var(--border2)",
+              borderRadius:6,cursor:"pointer",color:"var(--text)",
+              fontWeight:showAll===val?600:400,
+              background:showAll===val?"var(--bg3)":"transparent"}}>
+            {label}
+          </button>
+        ))}
+      </div>
+
+      {/* Events */}
+      {sortedDates.map(dk=>{
+        const evts=grouped[dk].sort((a,b)=>a.ecTime.localeCompare(b.ecTime));
+        const e0=evts[0];
+        const isToday=e0.diff===0;
+        return (
+          <div key={dk} style={{marginBottom:12}}>
+            <div style={{display:"flex",alignItems:"center",gap:8,marginBottom:5}}>
+              <span style={{fontSize:12,fontWeight:600,
+                color:isToday?"#D85A30":e0.diff>0?"var(--text)":"var(--text3)"}}>
+                {e0.formattedDate}
+                {e0.dayLabel&&<span style={{marginLeft:6,fontSize:10,
+                  background:isToday?"rgba(216,90,48,0.12)":"rgba(29,158,117,0.12)",
+                  color:isToday?"#D85A30":"#1D9E75",
+                  padding:"1px 6px",borderRadius:4,fontWeight:700}}>{e0.dayLabel}</span>}
+              </span>
+              <div style={{flex:1,height:"1px",background:"var(--border)"}}/>
+              <span style={{fontSize:10,color:"var(--text3)"}}>{evts.length}</span>
+            </div>
+            <div style={{display:"flex",flexDirection:"column",gap:3}}>
+              {evts.map(e=>(
+                <a key={e.id} href={e.url} target="_blank" rel="noopener noreferrer"
+                  style={{textDecoration:"none",display:"flex",alignItems:"center",gap:8,
+                    padding:"7px 10px",borderRadius:8,
+                    background:"var(--bg)",
+                    border:`1px solid ${isToday?"rgba(216,90,48,0.2)":"var(--border)"}`,
+                    borderLeft:`3px solid ${IND_COLORS[e.ind]||"#888"}`,
+                    opacity:e.diff<0?0.45:1}}>
+                  <span style={{fontSize:15,flexShrink:0}}>{e.flag}</span>
+                  <span style={{fontSize:12,fontWeight:600,color:"var(--text)",minWidth:28,flexShrink:0}}>{e.cur}</span>
+                  <span style={{fontSize:12,color:"var(--text2)",flex:1,
+                    overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap"}}>{e.ind}</span>
+                  <span style={{fontSize:12,fontFamily:"monospace",fontWeight:700,flexShrink:0,
+                    color:isToday?"#D85A30":"var(--text)"}}>{e.ecTime}</span>
+                </a>
+              ))}
+            </div>
+          </div>
+        );
+      })}
+      <div style={{marginTop:14,fontSize:10,color:"var(--text3)",textAlign:"center"}}>
+        Horas en Ecuador (UTC-5) · Fuente: TradingEconomics
+      </div>
+    </div>
+  );
+}
+
+ReactDOM.createRoot(document.getElementById("root")).render(<App/>);
+</script>
+</body>
+</html>
